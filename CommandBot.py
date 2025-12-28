@@ -38,7 +38,7 @@ def get_voice_input():
         audio = recognizer.listen(source)
 
     try:
-        print("Analizing...")
+        print("Analyzing...")
         user_input = recognizer.recognize_google(audio).lower()
         print(f"User: {user_input}")
         return user_input
@@ -95,9 +95,49 @@ def get_date():
     return datetime.datetime.now().strftime("%Y-%m-%d")
 
 def calculate(expression):
+    """
+    Safe calculator function that evaluates basic arithmetic expressions
+    without using eval() to prevent code injection attacks.
+    """
     try:
-        result = eval(expression)
+        # Remove spaces for easier parsing
+        expression = expression.replace(" ", "")
+        
+        # Simple approach: use ast to safely evaluate mathematical expressions
+        import ast
+        import operator
+        
+        # Define allowed operators
+        operators = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Pow: operator.pow,
+            ast.Mod: operator.mod,
+            ast.FloorDiv: operator.floordiv
+        }
+        
+        def safe_eval(node):
+            if isinstance(node, ast.Num):  # number
+                return node.n
+            elif isinstance(node, ast.BinOp):  # binary operation
+                left = safe_eval(node.left)
+                right = safe_eval(node.right)
+                return operators[type(node.op)](left, right)
+            elif isinstance(node, ast.UnaryOp):  # unary operation (e.g., -5)
+                if isinstance(node.op, ast.USub):
+                    return -safe_eval(node.operand)
+                elif isinstance(node.op, ast.UAdd):
+                    return safe_eval(node.operand)
+            else:
+                raise ValueError("Unsupported operation")
+        
+        tree = ast.parse(expression, mode='eval')
+        result = safe_eval(tree.body)
         return f"The result is {result}"
+    except (SyntaxError, ValueError, KeyError, ZeroDivisionError) as e:
+        return f"Sorry, I couldn't calculate that. Please use basic arithmetic operations (+, -, *, /, **, %, //)."
     except Exception as e:
         return f"Sorry, I couldn't calculate that. Error: {e}"
 def play_game():
@@ -120,15 +160,25 @@ def play_game():
         respond("Okay, let me know if you want to play again. Just say 'Play game'.")
 
     def display_board(board):
-        print("  1 | 2 | 3 ")
+        print(f"  {board[0]} | {board[1]} | {board[2]} ")
         print(" -----------")
-        print("  4 | 5 | 6 ")
+        print(f"  {board[3]} | {board[4]} | {board[5]} ")
         print(" -----------")
-        print("  7 | 8 | 9 ")
+        print(f"  {board[6]} | {board[7]} | {board[8]} ")
 
     def get_player_move(board, current_player):
-        move = int(input(f"Player {current_player}, enter your move (1-9): "))
-        return move
+        while True:
+            try:
+                move = int(input(f"Player {current_player}, enter your move (1-9): "))
+                if move < 1 or move > 9:
+                    print("Invalid move! Please enter a number between 1 and 9.")
+                    continue
+                if board[move - 1] != ' ':
+                    print("That position is already occupied! Choose another.")
+                    continue
+                return move
+            except ValueError:
+                print("Invalid input! Please enter a number between 1 and 9.")
 
     def check_win(board, current_player):
         win_conditions = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
@@ -162,15 +212,18 @@ def play_number_guessing():
     respond("I'm thinking of a number between 1 and 100. Try to guess it!")
     guesses = 0
     while True:
-        user_guess = int(get_user_input())
-        guesses += 1
-        if user_guess < number:
-            respond("Too low! Try again.")
-        elif user_guess > number:
-            respond("Too high! Try again.")
-        else:
-            respond(f"Congratulations! You guessed the number {number} in {guesses} guesses.")
-            break
+        try:
+            user_guess = int(get_user_input())
+            guesses += 1
+            if user_guess < number:
+                respond("Too low! Try again.")
+            elif user_guess > number:
+                respond("Too high! Try again.")
+            else:
+                respond(f"Congratulations! You guessed the number {number} in {guesses} guesses.")
+                break
+        except ValueError:
+            respond("Invalid input! Please enter a valid number.")
             
 
 def get_feedback():
@@ -332,7 +385,7 @@ def generate_response(user_input):
     elif "open youtube" in user_input.lower():
         open_youtube()
     elif "search" in user_input and " " in user_input.lower():
-        query = user_input.split("search", 1)[1].replace(" ", "").strip()
+        query = user_input.split("search", 1)[1].strip()
         search_google(query)
     else:
         respond("Sorry, I didn't understand that. You can ask for 'help' if you need assistance.")
