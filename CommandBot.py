@@ -141,24 +141,7 @@ def calculate(expression):
     except Exception as e:
         return f"Sorry, I couldn't calculate that. Error: {e}"
 def play_game():
-    respond("Which game would you like to play? Type 'one' for Tic Tac Toe or 'two' for Number Guessing.")
-    game_choice = get_user_input()
-
-    if "one" in game_choice:
-        play_tic_tac_toe()
-    elif "two" in game_choice:
-        play_number_guessing()
-    else:
-        respond("Sorry, I didn't catch that. Please choose between Tic Tac Toe and Number Guessing.")
-
-    # After the game ends, prompt for rematch
-    respond("Want a rematch (Yes/No)")
-    rematch_choice = get_user_input().lower()
-    if rematch_choice.startswith("y"):
-        play_game()
-    else:
-        respond("Okay, let me know if you want to play again. Just say 'Play game'.")
-
+    # Define nested functions first before using them
     def display_board(board):
         print(f"  {board[0]} | {board[1]} | {board[2]} ")
         print(" -----------")
@@ -206,6 +189,25 @@ def play_game():
                 break
 
             current_player = 'O' if current_player == 'X' else 'X'
+
+    # Now call the functions after they are defined
+    respond("Which game would you like to play? Type 'one' for Tic Tac Toe or 'two' for Number Guessing.")
+    game_choice = get_user_input()
+
+    if "one" in game_choice:
+        play_tic_tac_toe()
+    elif "two" in game_choice:
+        play_number_guessing()
+    else:
+        respond("Sorry, I didn't catch that. Please choose between Tic Tac Toe and Number Guessing.")
+
+    # After the game ends, prompt for rematch
+    respond("Want a rematch (Yes/No)")
+    rematch_choice = get_user_input().lower()
+    if rematch_choice.startswith("y"):
+        play_game()
+    else:
+        respond("Okay, let me know if you want to play again. Just say 'game mode'.")
 def play_number_guessing():
     # Implementation of Number Guessing
     number = random.randint(1, 100)
